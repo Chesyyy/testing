@@ -401,7 +401,7 @@ function update() {
         ctx.fillStyle = 'white';
         ctx.font = '20px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(`Ammo: ${player.ammo[player.currentGun] ?? 0}`, 20, 30);
+        ctx.fillText(`${player.currentGun} Ammo: ${player.ammo[player.currentGun] ?? 0}`, 20, 30);
     }
 
     requestAnimationFrame(update);
@@ -574,7 +574,8 @@ function gameOver() {
     ctx.fillText(`Reached floor ${currentFloor}`, canvas.width / 2, canvas.height / 2 + 80);
 
     ctx.font = '32px Arial';
-    const diffText = (difficultyMult % 10 === 3)
+    const diffText = (difficultyMult % 10 === 3) || (difficultyMult % 10 === 8)
+
         ? "You played on NOT EASY difficulty"
         : "You played on EASY difficulty";
 
@@ -591,6 +592,7 @@ function newFloor() {
 
     setTimeout(() => {
         currentFloor++;
+        difficultyMult = difficultyMult + Math.floor(currentFloor / 2);
         generateFloor();
         fixSpawn();
         spawnEnemies();
