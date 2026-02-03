@@ -50,7 +50,7 @@ const player = {
         sniper: 10,
         shotgun: 0,
     },
-    currentGun: 'None',
+    currentGun: 'pistol',
 };
 
 let enemies = [];
@@ -170,6 +170,11 @@ document.addEventListener('keydown', (e) => {
             }
             if (dist < 30 && crate.type === 'Chest') {
                 // player.ammo['pistol'] += 30; FOR NOW IT DOES NOTHING
+                if (Math.floor(Math.random() * 11) === 1) {
+                    player.currentGun = 'sniper';
+                } else {
+                    player.ammo[player.currentGun] += 20;
+                }
                 crates.splice(i, 1);
             }
         });
@@ -186,8 +191,8 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    if (key === '2') player.currentGun = 'pistol';
-    if (key === '1') player.currentGun = 'sniper';
+    //if (key === '2') player.currentGun = 'pistol';
+    //if (key === '1') player.currentGun = 'sniper';
 });
 
 document.addEventListener('keyup', (e) => {
