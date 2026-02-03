@@ -151,7 +151,6 @@ canvas.addEventListener("click", (e) => {
 document.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     keys[key] = true;
-    console.log(keys);
 
     if (e.key.toLowerCase() === 'e') {
         crates.forEach((crate, i) => {
@@ -202,8 +201,6 @@ document.addEventListener('keyup', (e) => {
 
 // update and draw function
 function update() {
-    if (gamePaused) return;
-
     if (choosingDifficulty) {
         chooseDifficulty();
         requestAnimationFrame(update);
@@ -212,14 +209,20 @@ function update() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (keys['w']) movePlayer(0, -player.speed);
-    if (keys['s']) movePlayer(0, player.speed);
-    if (keys['a']) movePlayer(-player.speed, 0);
-    if (keys['d']) movePlayer(player.speed, 0);
-
     if (player.hp <= 0) {
         gameOver();
         return;
+    }
+
+    if (floorTransition) {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'white';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`Floor ${currentFloor + 1}`, canvas.width / 2, canvas.height / 2);
     }
 
     if (!floorTransition && enemies.length === 0 && !floorExit) {
@@ -251,148 +254,155 @@ function update() {
         });
     }
 
-    const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
-    ctx.save();
-    ctx.translate(player.x, player.y);
+    if (!gamePaused) {
+        if (keys['w']) movePlayer(0, -player.speed);
+        if (keys['s']) movePlayer(0, player.speed);
+        if (keys['a']) movePlayer(-player.speed, 0);
+        if (keys['d']) movePlayer(player.speed, 0);
+    
+        const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+        ctx.save();
+        ctx.translate(player.x, player.y);
 
-    if (mouse.x < player.x) {
-        ctx.scale(1, -1);
-        ctx.rotate(-angle);
-    } else {
-        ctx.scale(1, 1);
-        ctx.rotate(angle);
-    }
+        if (mouse.x < player.x) {
+            ctx.scale(1, -1);
+            ctx.rotate(-angle);
+        } else {
+            ctx.scale(1, 1);
+            ctx.rotate(angle);
+        }
 
-    let imgToDraw;
-    if (player.currentGun === 'None') imgToDraw = playerEmpty;
-    else if (player.currentGun === 'pistol') imgToDraw = playerPistol;
-    else if (player.currentGun === 'sniper') imgToDraw = playerSniper;
+        let imgToDraw;
+        if (player.currentGun === 'None') imgToDraw = playerEmpty;
+        else if (player.currentGun === 'pistol') imgToDraw = playerPistol;
+        else if (player.currentGun === 'sniper') imgToDraw = playerSniper;
 
-    ctx.drawImage(imgToDraw, -16, -16);
-    ctx.restore();
-
-
-    const playerBarWidth = 50;
-    const playerBarHeight = 6;
-    const playerHealthRatio = player.hp / player.maxHp;
-    ctx.fillStyle = 'black';
-    ctx.fillRect(player.x - playerBarWidth/2, player.y - 40, playerBarWidth, playerBarHeight);
-    ctx.fillStyle = 'green';
-    ctx.fillRect(player.x - playerBarWidth/2, player.y - 40, playerBarWidth * playerHealthRatio, playerBarHeight);
-
-    if (floorExit) {
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(floorExit.x - floorExit.size/2, floorExit.y - floorExit.size/2, floorExit.size, floorExit.size);
-    }
+        ctx.drawImage(imgToDraw, -16, -16);
+        ctx.restore();
 
 
-    for (let i = player.bullets.length - 1; i >= 0; i--) {
-        const b = player.bullets[i];
-        b.x += Math.cos(b.angle) * b.speed;
-        b.y += Math.sin(b.angle) * b.speed;
+        const playerBarWidth = 50;
+        const playerBarHeight = 6;
+        const playerHealthRatio = player.hp / player.maxHp;
+        ctx.fillStyle = 'black';
+        ctx.fillRect(player.x - playerBarWidth/2, player.y - 40, playerBarWidth, playerBarHeight);
+        ctx.fillStyle = 'green';
+        ctx.fillRect(player.x - playerBarWidth/2, player.y - 40, playerBarWidth * playerHealthRatio, playerBarHeight);
 
-        for (let j = enemies.length - 1; j >= 0; j--) {
-            const enemy = enemies[j];
-            const dx = b.x - enemy.x;
-            const dy = b.y - enemy.y;
-            const dist = Math.hypot(dx, dy);
+        if (floorExit) {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(floorExit.x - floorExit.size/2, floorExit.y - floorExit.size/2, floorExit.size, floorExit.size);
+        }
 
-            if (dist < 12) {
-                enemy.hp -= guns[player.currentGun].dmg;
-                player.bullets.splice(i, 1);
 
-                if (enemy.hp <= 0) {
+        for (let i = player.bullets.length - 1; i >= 0; i--) {
+            const b = player.bullets[i];
+            b.x += Math.cos(b.angle) * b.speed;
+            b.y += Math.sin(b.angle) * b.speed;
+
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                const enemy = enemies[j];
+                const dx = b.x - enemy.x;
+                const dy = b.y - enemy.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < 12) {
+                    enemy.hp -= guns[player.currentGun].dmg;
+                    player.bullets.splice(i, 1);
+
+                    if (enemy.hp <= 0) {
 
                 // 1/3 chance to drop pistol crate
-                    if (Math.random() < 1 / 3) {
-                        crates.push({
-                        x: enemy.x,
-                        y: enemy.y,
-                        type: 'pistolCrate',
-                        width: 32,
-                        height: 32,
-                        img: pistolCrate
-                    });
-                }
+                        if (Math.random() < 1 / 3) {
+                            crates.push({
+                            x: enemy.x,
+                            y: enemy.y,
+                            type: 'pistolCrate',
+                            width: 32,
+                            height: 32,
+                            img: pistolCrate
+                        });
+                    }
 
-                enemies.splice(j, 1);
+                    enemies.splice(j, 1);
+                    }
+                    break;
                 }
-                break;
+            }
+
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height || isWall(b.x, b.y)) {
+                player.bullets.splice(i, 1);
             }
         }
 
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
-        ctx.fill();
 
-        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height || isWall(b.x, b.y)) {
-            player.bullets.splice(i, 1);
-        }
-    }
+        enemies.forEach(enemy => {
+            if (!enemy.path || enemy.path.length === 0 || Date.now() - (enemy.lastPathCalc || 0) > 500) {
+                enemy.path = findPath(enemy.x, enemy.y, player.x, player.y);
+                enemy.lastPathCalc = Date.now();
+            }
 
+            if (enemy.path && enemy.path.length > 0) {
+                const target = enemy.path[0];
+                const dx = target.x - enemy.x;
+                const dy = target.y - enemy.y;
+                const dist = Math.hypot(dx, dy);
 
-    enemies.forEach(enemy => {
-        if (!enemy.path || enemy.path.length === 0 || Date.now() - (enemy.lastPathCalc || 0) > 500) {
-            enemy.path = findPath(enemy.x, enemy.y, player.x, player.y);
-            enemy.lastPathCalc = Date.now();
-        }
+                if (dist < enemy.speed) enemy.path.shift();
+                else {
+                    enemy.x += (dx / dist) * enemy.speed;
+                    enemy.y += (dy / dist) * enemy.speed;
+                }
+            }
+        });
 
-        if (enemy.path && enemy.path.length > 0) {
-            const target = enemy.path[0];
-            const dx = target.x - enemy.x;
-            const dy = target.y - enemy.y;
+        const now = Date.now();
+        enemies.forEach(enemy => {
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
             const dist = Math.hypot(dx, dy);
 
-            if (dist < enemy.speed) enemy.path.shift();
-            else {
-                enemy.x += (dx / dist) * enemy.speed;
-                enemy.y += (dy / dist) * enemy.speed;
+            if (dist < 12 + player.size/2) {
+                if (!enemy.lastHit || now - enemy.lastHit > 500) { // 500ms cooldown
+                    player.hp -= (enemy.damage + (2 * difficultyMult));
+                    enemy.lastHit = now;
+                }
             }
-        }
-    });
+        });
 
-    const now = Date.now();
-    enemies.forEach(enemy => {
-        const dx = player.x - enemy.x;
-        const dy = player.y - enemy.y;
-        const dist = Math.hypot(dx, dy);
+        enemies.forEach(enemy => {
+            ctx.fillStyle = enemy.type === "tank" ? "purple" : enemy.type === "fast" ? "yellow" : "red";
+            ctx.beginPath();
+            ctx.arc(enemy.x, enemy.y, 12, 0, Math.PI * 2);
+            ctx.fill();
 
-        if (dist < 12 + player.size/2) {
-            if (!enemy.lastHit || now - enemy.lastHit > 500) { // 500ms cooldown
-                player.hp -= (enemy.damage + (2 * difficultyMult));
-                enemy.lastHit = now;
-            }
-        }
-    });
+            const barWidth = 24;
+            const barHeight = 4;
+            const healthRatio = enemy.hp / (enemyTypes[enemy.type].hp + (2 * difficultyMult));
 
-    enemies.forEach(enemy => {
-        ctx.fillStyle = enemy.type === "tank" ? "purple" : enemy.type === "fast" ? "yellow" : "red";
-        ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, 12, 0, Math.PI * 2);
-        ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.fillRect(enemy.x - barWidth/2, enemy.y - 20, barWidth, barHeight);
+            ctx.fillStyle = 'green';
+            ctx.fillRect(enemy.x - barWidth/2, enemy.y - 20, barWidth * healthRatio, barHeight);
+        });
 
-        const barWidth = 24;
-        const barHeight = 4;
-        const healthRatio = enemy.hp / (enemyTypes[enemy.type].hp + (2 * difficultyMult));
-
-        ctx.fillStyle = 'black';
-        ctx.fillRect(enemy.x - barWidth/2, enemy.y - 20, barWidth, barHeight);
-        ctx.fillStyle = 'green';
-        ctx.fillRect(enemy.x - barWidth/2, enemy.y - 20, barWidth * healthRatio, barHeight);
-    });
-
-    crates.forEach(crate => {
-        ctx.drawImage(crate.img, crate.x - crate.width/2, crate.y - crate.height/2, crate.width, crate.height);
-    });
+        crates.forEach(crate => {
+            ctx.drawImage(crate.img, crate.x - crate.width/2, crate.y - crate.height/2, crate.width, crate.height);
+        });
 
 
-    drawMap(ctx);
+        drawMap(ctx);
 
-    ctx.fillStyle = 'white';
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Ammo: ${player.ammo[player.currentGun] ?? 0}`, 20, 30);
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Ammo: ${player.ammo[player.currentGun] ?? 0}`, 20, 30);
+    }
 
     requestAnimationFrame(update);
 }
@@ -575,15 +585,6 @@ function newFloor() {
     gamePaused = true;
     floorTransition = true;
 
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = 'white';
-    ctx.font = '48px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`Floor ${currentFloor + 1}`, canvas.width / 2, canvas.height / 2);
-
     player.bullets = [];
     enemies = [];
     crates = [];
@@ -596,8 +597,6 @@ function newFloor() {
 
         floorTransition = false;
         gamePaused = false;
-
-        update();
     }, 5000);
 }
 
