@@ -592,7 +592,9 @@ function newFloor() {
 
     setTimeout(() => {
         currentFloor++;
-        difficultyMult = difficultyMult + Math.floor(currentFloor / 2);
+        if (currentFloor % 10 === 0) {
+            difficultyMult += currentFloor / 5;
+        }
         generateFloor();
         fixSpawn();
         spawnEnemies();
