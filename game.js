@@ -46,7 +46,7 @@ const player = {
     gun_mods: [],
     inventory: [],
     ammo: {
-        pistol: 50,
+        pistol: 30,
         sniper: 10,
         shotgun: 0,
     },
@@ -596,6 +596,8 @@ function newFloor() {
 
         floorTransition = false;
         gamePaused = false;
+
+        update();
     }, 5000);
 }
 
