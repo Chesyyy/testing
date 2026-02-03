@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hotel Hell</title>
+    <style>
+        body {
+            background-color: #8B4513;
+            color: black;
+        }
+
+        .title1 {
+            font-size: 32px;
+            font-weight: bold;
+            justify-content: center;
+            text-align: center;
+        }
+        .supabutton {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .rect {
+            width: 200px;
+            height: 60px;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="title1">
+        <h1>Hotel Hell</h1>
+        <br>
+        <br>
+        <div class="supabutton">
+            <div class="rect" onclick="location.href='game.html'"> 
+                <h2 style="color: white;">PLAY</h2>
+            </div>
+        </div>
+        <div class="supabutton">
+            <div class="rect" onclick="location.href='instructions.html'" style="font-size: medium;"> 
+                <h2 style="color: white;">INSTRUCTIONS</h2>
+            </div>
+        </div>
+        <div class="supabutton">
+            <img src="assets/chikoi.gif" style="max-width: 200px; max-height: 200px;">
+        </div>
+        <div class="supabutton">
+            <span>Game made by Chesyyy.</span>
+        </div>
+    </div>
+</body>
+</html>
