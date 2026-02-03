@@ -53,6 +53,8 @@ const player = {
     currentGun: 'pistol',
 };
 
+
+
 let enemies = [];
 let currentFloor = 1;
 let gamePaused = false;
@@ -62,6 +64,15 @@ let difficultyMult = 0;
 const EXIT_SIZE = 30;
 let crates = []; 
 let choosingDifficulty = true; 
+
+const colorButtons = [
+    { color: "red",    x: 150, y: 350, r: 20 },
+    { color: "blue",   x: 220, y: 350, r: 20 },
+    { color: "green",  x: 290, y: 350, r: 20 },
+    { color: "yellow", x: 360, y: 350, r: 20 }
+];
+
+let selectedPlayerColor = "green";
 
 
 const enemyTypes = {
@@ -277,7 +288,8 @@ function update() {
         else if (player.currentGun === 'pistol') imgToDraw = playerPistol;
         else if (player.currentGun === 'sniper') imgToDraw = playerSniper;
 
-        ctx.drawImage(imgToDraw, -16, -16);
+        drawTintedPlayer(imgToDraw, -imgToDraw.width / 2, -imgToDraw.height / 2, selectedPlayerColor);
+
         ctx.restore();
 
 
@@ -605,18 +617,38 @@ function newFloor() {
 }
 
 function chooseDifficulty() {
+    // background
     ctx.fillStyle = "gray";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.drawImage(playerEmpty, easyBtn.x + 50, easyBtn.y + 100);
-    ctx.drawImage(playerEmpty, hardBtn.x + 50, hardBtn.y + 100);
+    // player previews
+    drawTintedPlayer(
+        playerEmpty,
+        easyBtn.x + 50,
+        easyBtn.y + 100,
+        selectedPlayerColor
+    );
 
+    drawTintedPlayer(
+        playerEmpty,
+        hardBtn.x + 50,
+        hardBtn.y + 100,
+        selectedPlayerColor
+    );
+
+    // difficulty text
     ctx.fillStyle = "white";
     ctx.font = "30px Arial";
     ctx.textAlign = "center";
 
     ctx.fillText("Easy", easyBtn.x + easyBtn.w / 2, easyBtn.y + easyBtn.h + 40);
     ctx.fillText("Not Easy", hardBtn.x + hardBtn.w / 2, hardBtn.y + hardBtn.h + 40);
+
+    // color UI
+    ctx.font = "20px Arial";
+    ctx.fillText("Choose your color", canvas.width / 2, 310);
+
+    drawColorButtons();
 }
 
 function isCollidingWithWall(x, y, radius) {
@@ -634,6 +666,46 @@ function isCollidingWithWall(x, y, radius) {
         return gx < 0 || gy < 0 || gx >= map[0].length || gy >= map.length || map[gy][gx] === 1;
     });
 }
+
+function drawTintedPlayer(img, x, y, color) {
+    ctx.drawImage(img, x, y);
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, img.width, img.height);
+    ctx.globalCompositeOperation = "source-over";
+}
+
+function drawColorButtons() {
+    colorButtons.forEach(btn => {
+        ctx.beginPath();
+        ctx.arc(btn.x, btn.y, btn.r, 0, Math.PI * 2);
+        ctx.fillStyle = btn.color;
+        ctx.fill();
+        ctx.closePath();
+
+        // outline selected color
+        if (btn.color === selectedPlayerColor) {
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "white";
+            ctx.stroke();
+        }
+    });
+}
+
+canvas.addEventListener("click", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    colorButtons.forEach(btn => {
+        const dx = mx - btn.x;
+        const dy = my - btn.y;
+        if (Math.sqrt(dx * dx + dy * dy) < btn.r) {
+            selectedPlayerColor = btn.color;
+        }
+    });
+});
+
 
 update();
 
